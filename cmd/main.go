@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"os"
 
 	"github.com/dmcleish91/go-pet-agency/internal/models"
@@ -16,7 +15,8 @@ var DATABASE_URL string
 var conn *pgxpool.Pool
 
 type application struct {
-	users *models.UserModel
+	users  *models.UserModel
+	routes *echo.Echo
 }
 
 func main() {
@@ -27,11 +27,15 @@ func main() {
 	conn = CreateDatabaseConnection(DATABASE_URL)
 	defer conn.Close()
 
+	e := echo.New()
+
 	app := &application{
-		users: &models.UserModel{DB: conn},
+		users:  &models.UserModel{DB: conn},
+		routes: e,
 	}
 
-	e := echo.New()
+	app.Routes()
+
 	e.Use(ServerHeader)
 	secured := e.Group("/secure")
 
@@ -44,9 +48,6 @@ func main() {
 		SigningKey:    []byte(signingKey),
 	}))
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
