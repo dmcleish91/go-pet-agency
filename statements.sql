@@ -4,7 +4,7 @@ CREATE TABLE pet-agency.users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
+    hashedpassword VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -42,6 +42,11 @@ WHERE email = $1;  -- Assuming $1 is the placeholder for the user's email
 UPDATE users
 SET email = $1  -- Assuming $1 is the placeholder for the new email address
 WHERE id = $2;  -- Assuming $2 is the placeholder for the user's ID
+
+-- Check if a email address exists in the user table
+SELECT COUNT(*)
+FROM users
+WHERE email = 'email@example.com';
 
 -- Update Username
 UPDATE users
