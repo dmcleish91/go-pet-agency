@@ -33,7 +33,7 @@ func (app *application) GetAllAvailableAnimals(c echo.Context) error {
 }
 
 func (app *application) GetPetDetails(c echo.Context) error {
-	petId := c.FormValue("petId")
+	petId := c.QueryParam("petId")
 
 	id, err := strconv.ParseInt(petId, 10, 64)
 	if err != nil {
@@ -81,6 +81,86 @@ func (app *application) AddAdoptionInformation(c echo.Context) error {
 
 	log.Printf("this is your data: %#v", result)
 	return c.String(http.StatusOK, "Successfuly added adoption information")
+}
+
+func (app *application) EditAdoptionInformation(c echo.Context) error {
+	pet := models.Pet{}
+
+	defer c.Request().Body.Close()
+	b, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		log.Printf("Failed reading the request body: %s", err)
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	err = json.Unmarshal(b, &pet)
+	if err != nil {
+		log.Printf("Failed unmarshaling: %s", err)
+		return c.String(http.StatusInternalServerError, "Parsing Error! Is this JSON?")
+	}
+
+	userId := GetUserIdFromToken(c)
+	if userId == -1 {
+		return c.String(http.StatusInternalServerError, "Something went wrong")
+	}
+
+	pet.UserID = userId
+
+	result, err := app.pets.EditPetListing(pet)
+	if err != nil {
+		log.Printf("Postgresql Error: %s", err)
+		return c.String(http.StatusInternalServerError, "Something went wrong. Try again later")
+	}
+
+	if result == 0 {
+		return c.String(http.StatusUnprocessableEntity, "Error updating adoption information. Did you include the \"id\"")
+	}
+
+	log.Printf("User with id %#v modified %#v rows", userId, result)
+	return c.String(http.StatusOK, "Successfuly edited adoption information")
+}
+
+func (app *application) UpdatePetAdoptionStatus(c echo.Context) error {
+	petIdStr := c.QueryParam("petId")
+
+	petId, err := strconv.ParseInt(petIdStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing id: %s", err)
+		return c.String(http.StatusUnprocessableEntity, "You need to provide a valid number")
+	}
+
+	userId := GetUserIdFromToken(c)
+	if userId == -1 {
+		return c.String(http.StatusInternalServerError, "Something went wrong")
+	}
+
+	pet, err := app.pets.GetPetDetails(int(petId))
+	if err != nil {
+		log.Printf("Database Error: %s", err)
+		return c.String(http.StatusInternalServerError, "Something went wrong. Try again later")
+	}
+
+	adoptionStatus := pet.Status
+
+	var newAdoptionStatus string
+	if adoptionStatus == "available" {
+		newAdoptionStatus = "adopted"
+	} else {
+		newAdoptionStatus = "available"
+	}
+
+	result, err := app.pets.TogglePetStatus(int(petId), userId, newAdoptionStatus)
+	if err != nil {
+		log.Printf("Database Error: %s", err)
+		return c.String(http.StatusInternalServerError, "Something went wrong. Try again later")
+	}
+
+	if result == 0 {
+		return c.String(http.StatusUnprocessableEntity, "Error updating adoption information. Did you include the \"id\"")
+	}
+
+	log.Printf("User with id %#v modified %#v rows with new status: %s", userId, result, newAdoptionStatus)
+	return c.String(http.StatusOK, "Adoption status set to: "+newAdoptionStatus)
 }
 
 func (app *application) Register(c echo.Context) error {

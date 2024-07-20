@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"os"
 
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -27,10 +26,6 @@ func (app *application) Routes() *echo.Echo {
 		SigningKey:    []byte(signingKey),
 	}))
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-
 	e.GET("/available", app.GetAllAvailableAnimals)
 
 	e.GET("/details", app.GetPetDetails)
@@ -40,6 +35,10 @@ func (app *application) Routes() *echo.Echo {
 	e.POST("/login", app.Login)
 
 	secured.POST("/addlisting", app.AddAdoptionInformation)
+
+	secured.PUT("/editlisting", app.EditAdoptionInformation)
+
+	secured.PUT("/toggleAdoptionStatus", app.UpdatePetAdoptionStatus)
 
 	return e
 }
