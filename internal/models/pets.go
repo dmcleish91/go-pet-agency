@@ -34,7 +34,7 @@ type PetModel struct {
 
 func (m *PetModel) GetAllAvailablePets() ([]*Pet, error) {
 	query := `SELECT id, name, species, breed, age, status, gender, size, color, weight, vaccination_status, spayed, microchipped, 
-	rescue_story, created_at FROM pets WHERE status = 'available'`
+	rescue_story, created_at, user_id FROM pets WHERE status = 'available'`
 
 	rows, err := m.DB.Query(context.Background(), query)
 	if err != nil {
@@ -46,7 +46,7 @@ func (m *PetModel) GetAllAvailablePets() ([]*Pet, error) {
 	for rows.Next() {
 		pet := &Pet{}
 		err := rows.Scan(&pet.ID, &pet.Name, &pet.Species, &pet.Breed, &pet.Age, &pet.Status, &pet.Gender, &pet.Size, &pet.Color,
-			&pet.Weight, &pet.VaccinationStatus, &pet.Spayed, &pet.Microchipped, &pet.RescueStory, &pet.CreatedAt)
+			&pet.Weight, &pet.VaccinationStatus, &pet.Spayed, &pet.Microchipped, &pet.RescueStory, &pet.CreatedAt, &pet.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("unable to scan the row. %v", err)
 		}

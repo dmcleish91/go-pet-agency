@@ -54,7 +54,7 @@ SET username = $1  -- Assuming $1 is the placeholder for the new username
 WHERE id = $2;  -- Assuming $2 is the placeholder for the user's ID
 
 -- Get All Available Pets
-SELECT id, name, species, breed, age, status, gender, size, color, weight, vaccination_status, spayed, microchipped, rescue_story, created_at
+SELECT id, name, species, breed, age, status, gender, size, color, weight, vaccination_status, spayed, microchipped, rescue_story, created_at, user_id
 FROM pets
 WHERE status = 'Available';
 
