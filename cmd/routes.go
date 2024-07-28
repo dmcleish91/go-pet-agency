@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -21,10 +22,16 @@ func (app *application) Routes() *echo.Echo {
 
 	secured := e.Group("/secure")
 
-	secured.Use(echojwt.WithConfig(echojwt.Config{
+	
+	config := echojwt.Config{
+		NewClaimsFunc: func(c echo.Context) jwt.Claims {
+			return new(jwtCustomClaims)
+		},
 		SigningMethod: "HS256",
 		SigningKey:    []byte(signingKey),
-	}))
+	}
+
+	secured.Use(echojwt.WithConfig(config))
 
 	e.GET("/available", app.GetAllAvailableAnimals)
 

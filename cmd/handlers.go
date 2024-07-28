@@ -16,9 +16,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type JwtClaims struct {
-	Sub  string `json:"sub"`  // Subject (typically user ID)
-	Name string `json:"name"` // Name of the user
+type jwtCustomClaims struct {
+	Sub   string `json:"sub"`  // Subject (user ID)
+	Name  string `json:"name"` // Name of the user
+	Admin bool   `json:"admin"`
+	jwt.RegisteredClaims
 }
 
 func (app *application) GetAllAvailableAnimals(c echo.Context) error {
@@ -238,13 +240,19 @@ func (app *application) Login(ctx echo.Context) error {
 // These are utility functions
 
 func createJwtToken(userID int, username string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"Sub":   fmt.Sprintf("%d", userID),
-		"Name":  username,
-		"Admin": false,
-		"exp":   time.Now().Add(time.Minute * 45).Unix(), // Expiration time (example: 30 minutes from now)
-		"iat":   time.Now().Unix(),                       // Issued at time
-	})
+	// Set custom claims
+	claims := &jwtCustomClaims{
+		Sub:   fmt.Sprintf("%d", userID),
+		Name:  username,
+		Admin: false,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	// Create token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString([]byte("itsasecret"))
 	if err != nil {
@@ -255,23 +263,11 @@ func createJwtToken(userID int, username string) (string, error) {
 }
 
 func GetUserIdFromToken(c echo.Context) int {
-	token, ok := c.Get("user").(*jwt.Token)
-	if !ok {
-		log.Println("failed to cast claims as jwt.Token")
-		return -1
-	}
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(*jwtCustomClaims)
+	userIdStr := claims.Sub
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		log.Println("failed to cast jwt.Token as jwt.MapClaims")
-		return -1
-	}
-
-	userIdStr, ok := claims["Sub"].(string)
-	if !ok {
-		log.Println("User ID not found in token claims")
-		return -1
-	}
+	log.Println("Decoded user id is", userIdStr)
 
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {

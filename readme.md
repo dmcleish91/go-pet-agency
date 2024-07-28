@@ -3,6 +3,12 @@
 ## Overview
 The Pet Agency API allows users to register, login, add pet listings, edit their listings, and toggle the status of their listings. The API is secured with JWT (JSON Web Token) and users can only edit the data they created. There are two public endpoints that return all available pets for adoption and the details of a single animal.
 
+  ```bash
+  {
+      go build -o pet-agency.exe .\cmd\
+  }
+  ```
+
 ## Technology Stack
 - **Language:** Golang
 - **Framework:** Echo
